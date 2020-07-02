@@ -1,0 +1,116 @@
+---
+title: "ST558 Project 2"
+author: Michael Evans
+date: 7/3/2020
+output: 
+  rmarkdown::github_document:
+    toc: true
+params:
+  weekday: weekday
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(caret)
+library(gbm)
+library(randomForest)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+## Description of Data
+
+### Reading Data
+```{r reading_data, message = F}
+#Read Data
+news <- read_csv("OnlineNewsPopularity.csv")
+
+#Add column that tells which weekday it is
+news <- news %>%
+    mutate(Weekday = case_when(weekday_is_monday ==  1 ~ 'Monday',
+                               weekday_is_tuesday ==  1 ~ 'Tuesday',
+                               weekday_is_wednesday ==  1 ~ 'Wednesday',
+                               weekday_is_thursday ==  1 ~ 'Thursday',
+                               weekday_is_friday ==  1 ~ 'Friday',
+                               weekday_is_saturday ==  1 ~ 'Saturday',
+                               weekday_is_sunday ==  1 ~ 'Sunday'))
+
+#Get News for One Day
+daily_news <- news %>% filter(Weekday == params$weekday) %>% 
+  select(-(weekday_is_monday:weekday_is_sunday))
+
+head(daily_news %>% select(Weekday))
+
+#Make Shares into Factor
+daily_news$shares_1400 <- ifelse(daily_news$shares > 1400, 1, 0)
+daily_news$shares_1400 <- as.factor(daily_news$shares_1400)
+
+#Select Variables
+daily_news <-daily_news %>% select(n_tokens_title:num_videos,
+                                   data_channel_is_lifestyle:data_channel_is_world,
+                                   shares_1400)
+
+#Make Factor
+daily_news$data_channel_is_lifestyle <- as.factor(daily_news$data_channel_is_lifestyle)
+daily_news$data_channel_is_entertainment <- as.factor(daily_news$data_channel_is_entertainment)
+daily_news$data_channel_is_bus <- as.factor(daily_news$data_channel_is_bus)
+daily_news$data_channel_is_socmed <- as.factor(daily_news$data_channel_is_socmed)
+daily_news$data_channel_is_tech <- as.factor(daily_news$data_channel_is_tech)
+daily_news$data_channel_is_world <- as.factor(daily_news$data_channel_is_world)
+
+#Split into Training and Testing Set
+set.seed(321)
+train <- sample(1:nrow(daily_news), size = nrow(daily_news) * 0.7)
+test <- setdiff(1:nrow(daily_news), train)
+
+#Subset data
+daily_train <- daily_news[train, ]
+daily_test <- daily_news[test, ]
+```
+
+```{r random_forest}
+# #Create Model
+# library(randomForest)
+# 
+# random_forest <- randomForest(shares_1400 ~ ., data = daily_train, mtry = ncol(daily_train)/3, 
+#                                             ntree = 500, importance = TRUE)
+# random_forest
+# 
+# #Predict Random Forest
+# random_pred <- predict(random_forest, daily_test, type = "class")
+# 
+# #Create Results
+# random_results <- confusionMatrix(data = random_pred, reference = daily_test$shares_1400)
+# random_results
+# 
+# #View Model
+# random_forest
+# 
+# #Create Model
+# bagged_tree <- train(shares_1400 ~ ., data = daily_train, method = "treebag", 
+#                      trControl = trainControl(method = "cv"), tuneLength = 10)
+# 
+# #View Model
+# bagged_tree
+# 
+# #Predict Bagged Tree
+# bagged_pred <- predict(bagged_tree, daily_test)
+# 
+# #Create Results
+# bagged_results <- confusionMatrix(data = bagged_pred, reference = daily_test$shares_1400)
+# bagged_results
+```
+```
+
+## Purpose of Analysis
+
+## Methods
+
+# Summarizations
+
+# Modeling
+
+# Conclusion
+
