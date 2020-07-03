@@ -5,7 +5,7 @@ library(rmarkdown)
 #Create Function to Render File
 render_function <- function(day){
   rmarkdown::render(
-  "README.Rmd", 
+  "Project_Work.Rmd", 
   params = list(weekday = day),
   output_file = paste0(day,"-", "Report", ".md")
 )

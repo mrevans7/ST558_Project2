@@ -1,0 +1,168 @@
+---
+title: "ST558 Project 2"
+author: Michael Evans
+date: 7/3/2020
+output: 
+  rmarkdown::github_document:
+    toc: true
+params:
+  #weekday: weekday
+  weekday: "Monday"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(caret)
+library(gbm)
+library(randomForest)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+You should have an introduction section that describes the data, the purpose of your analysis, and the methods you’ll use (roughly - more detail can be given later in the document).
+
+## Description of Data
+You should briefly describe the data and the variables you have to work with (no need to discuss all of them, just the ones you want to use).
+
+## Purpose of Analysis
+
+## Methods
+
+# Reading Data
+
+## Initial Read
+```{r reading_data, message = F}
+#Read Data
+news <- read_csv("OnlineNewsPopularity.csv")
+
+#Add column that tells which weekday it is
+news <- news %>%
+    mutate(Weekday = case_when(weekday_is_monday ==  1 ~ 'Monday',
+                               weekday_is_tuesday ==  1 ~ 'Tuesday',
+                               weekday_is_wednesday ==  1 ~ 'Wednesday',
+                               weekday_is_thursday ==  1 ~ 'Thursday',
+                               weekday_is_friday ==  1 ~ 'Friday',
+                               weekday_is_saturday ==  1 ~ 'Saturday',
+                               weekday_is_sunday ==  1 ~ 'Sunday'))
+
+#Get News for One Day
+daily_news <- news %>% filter(Weekday == params$weekday) %>% 
+  select(-(weekday_is_monday:weekday_is_sunday))
+```
+
+## Creating New Variables
+
+```{r new_variables}
+#Make Shares into Factor
+daily_news$shares_1400 <- ifelse(daily_news$shares > 1400, 1, 0)
+daily_news$shares_1400 <- as.factor(daily_news$shares_1400)
+
+#Create Variable for Channel Type
+daily_news <- daily_news %>%
+    mutate(channel = case_when(data_channel_is_lifestyle ==  1 ~ 'Lifestyle',
+                               data_channel_is_entertainment ==  1 ~ 'Entertainment',
+                               data_channel_is_bus ==  1 ~ 'Bus',
+                               data_channel_is_socmed ==  1 ~ 'SocMed',
+                               data_channel_is_tech ==  1 ~ 'Tech',
+                               data_channel_is_world ==  1 ~ 'World'))
+
+#Replace NA Values with "None"
+daily_news$channel <- daily_news$channel %>% replace_na("None")
+```
+
+## Select Variables
+
+```{r get_variables}
+#Select Variables
+daily_news <-daily_news %>% select(n_tokens_title, n_tokens_content, num_hrefs:num_videos, shares_1400, channel)
+
+#Make Factor
+daily_news$channel <- as.factor(daily_news$channel)
+```
+
+## Split into Train/Test Data
+
+```{r train_test}
+#Split into Training and Testing Set
+set.seed(321)
+train <- sample(1:nrow(daily_news), size = nrow(daily_news) * 0.7)
+test <- setdiff(1:nrow(daily_news), train)
+
+#Subset data
+daily_train <- daily_news[train, ]
+daily_test <- daily_news[test, ]
+```
+
+# Summarizations
+You should produce some basic (but meaningful) summary statistics about the training data you are working with. The general things that the plots describe should be explained but, since we are going to automate things, there is no need to try and explain particular trends in the plots you see (unless you want to try and automate that too!).
+
+# Modeling
+
+## Linear Model
+```{r linear_model}
+#First Model
+glm_fit1 <- glm(shares_1400 ~ n_tokens_title + n_tokens_content + num_videos + channel, 
+                data = daily_train, family = "binomial")
+
+glm_fit1$aic
+
+#Second Model
+glm_fit2 <- glm(shares_1400 ~ n_tokens_title + n_tokens_content + num_videos, 
+                data = daily_train, family = "binomial")
+glm_fit2$aic
+```
+
+## Non-Linear Model
+
+```{r bagged_tree}
+#Create Model
+bagged_tree <- train(shares_1400 ~ ., data = daily_train, method = "treebag",
+                     trControl = trainControl(method = "cv"), tuneLength = 10)
+
+#View Model
+bagged_tree
+```
+
+# Modeling Results
+
+## Linear Model
+
+```{r linear_predict}
+glm_pred1 <- predict(glm_fit1, newdata = daily_test)
+
+#Round Output
+glm_pred1 <- round(glm_pred1, 0)
+
+#Make Data Frame
+glm_pred1 <- data.frame(glm_pred1)
+names(glm_pred1) <- "shares_1400"
+
+#Adjust for Bounds
+glm_pred1[,1][glm_pred1[,1] < 0] <- 0
+glm_pred1[,1][glm_pred1[,1] > 1] <- 1
+
+#Create Levels
+levels(glm_pred1$shares_1400) <- c("0", "1")
+
+#Make Factor
+glm_pred1$shares_1400 <- as.factor(glm_pred1$shares_1400)
+
+#Create Confusion Matrix
+matrix1 <- confusionMatrix(glm_pred1$shares_1400, daily_test$shares_1400)
+matrix1
+```
+
+## Non-Linear Model
+
+```{r predict_bagged}
+#Predict Bagged Tree
+bagged_pred <- predict(bagged_tree, daily_test)
+
+#Create Results
+bagged_results <- confusionMatrix(data = bagged_pred, reference = daily_test$shares_1400)
+bagged_results
+```
+
+# Conclusion
+
