@@ -2,12 +2,13 @@
 title: "ST558 Project 2"
 author: Michael Evans
 date: 7/3/2020
-output: 
+output:
+  #pdf_document 
   rmarkdown::github_document:
     toc: true
 params:
-  #weekday: weekday
-  weekday: "Monday"
+  weekday: weekday
+  #weekday: "Monday"
 ---
 
 ```{r setup, include=FALSE}
@@ -134,8 +135,9 @@ kable(table.1, caption = "Shares vs. Data Channel")
 ### Numerical Summary
 Next, we will use the `summary()` function to get summary information for each of our numerical variables. Summary information will include the minimum, first quartile, median, mean, third quartile, and maximum observations within each variable. 
 ```{r five_number}
+#Create Sumamry
 summary <- daily_train %>% select(n_tokens_title:num_videos) %>% summary()
-kable(summary)
+kable(summary, caption = "Summary for Numeric Variables")
 ```
 
 ## Plots
@@ -169,7 +171,8 @@ In this graph, we will look at the relationship between the number of links in a
 visuals.3 <- ggplot(data = daily_train, aes(x = num_hrefs, y = num_self_hrefs))
 visuals.3 + geom_point(aes(color = shares_1400)) +
   geom_smooth() + 
-  labs(color = "More than 1,400 Shares?", title = "Number of Links and Links to Other Mashable Articles",
+  labs(color = "More than 1,400 Shares?", 
+       title = "Number of Links and Links to Other Mashable Articles",
        x = "Number of Links", y = "Number of Links to Other Mashable Articles") 
 ```
 
@@ -179,67 +182,125 @@ In this graph, we will look at the number of articles posted in each data channe
 #Fourth Visual
 visuals.4 <- ggplot(data = daily_train, aes(x = channel))
 visuals.4 + geom_bar(aes(fill = shares_1400)) +
-  labs(title = "Density Bar Plot for Channel", x = "Channel", y = "Count", fill = "More than 1,400 Shares")
+  labs(title = "Density Bar Plot for Channel", x = "Channel", y = "Count", 
+       fill = "More than 1,400 Shares")
 ```
 
 # Modeling
+In this section of the report, we will create our logistic regression model and bagged trees model.
 
-## Linear Model
+## Logistic Regression Model
+Logistic regression models will be created using the `glm()` function. In comparing logistic regression model, the AIC will be compared. The smaller the AIC, the better. It accounts for how well the model fits the data but also penalizes for overly complex models. We will choose the model with the smallest AIC. 
+
+For this analysis, we will investigate five different logistic models, summarized below:  
+1. Using all 7 predictor variables to predict `shares_1400`.
+2. Using variables relating to number of words to predict `shares_1400` (`n_tokens_title`, `n_tokens_content`).
+3. Using variables relating to links to predict `shares_1400` (`num_hrefs`, `num_self_hrefs`).
+4. Using variables relating to media to predict `shares_1400` (`num_imgs`, `num_videos`).
+5. Using variables relating to data channel to predict `shares_1400` (`channel`).
+
+We will use the function `which.min()` to determine the model with the smallest AIC. Then, we will use an if else chain to save the object `best_model` as the model with the lowest AIC. 
 ```{r linear_model}
 #First Model
-glm_fit1 <- glm(shares_1400 ~ n_tokens_title + n_tokens_content + num_videos + channel, 
+glm_fit1 <- glm(shares_1400 ~., 
                 data = daily_train, family = "binomial")
-
+#AIC
 glm_fit1$aic
 
 #Second Model
-glm_fit2 <- glm(shares_1400 ~ n_tokens_title + n_tokens_content + num_videos, 
+glm_fit2 <- glm(shares_1400 ~ n_tokens_title + n_tokens_content, 
                 data = daily_train, family = "binomial")
+#AIC
 glm_fit2$aic
+
+#Third Model
+glm_fit3 <- glm(shares_1400 ~ num_hrefs + num_self_hrefs, 
+                data = daily_train, family = "binomial")
+#AIC
+glm_fit3$aic
+
+#Fourth Model
+glm_fit4 <- glm(shares_1400 ~ num_imgs + num_videos, 
+                data = daily_train, family = "binomial")
+#AIC
+glm_fit4$aic
+
+#Fifth Model
+glm_fit5 <- glm(shares_1400 ~  channel, 
+                data = daily_train, family = "binomial")
+#AIC
+glm_fit5$aic
+
+#All Models
+glm_models <- c(Model1 = glm_fit1$aic, Model2 = glm_fit2$aic, Model3 = glm_fit3$aic, 
+                Model4 = glm_fit4$aic, Model5 = glm_fit5$aic)
+
+#Find Model with Smallest AIC
+min <- which.min(glm_models)
+
+#Save Best Model
+if(min == 1){
+  best_model = glm_fit1
+} else if(min == 2){
+    best_model = glm_fit2
+} else if(min == 3){
+    best_model = glm_fit3
+} else if(min == 4){
+    best_model = glm_fit4
+} else if(min == 5){
+    best_model = glm_fit5
+}
+
+#Summary of Best Model
+best_model
 ```
 
-## Non-Linear Model
-
+## Bagged Trees Model
+The bagged trees model will be created using the `train()` function. With this method, there is no tuning parameter, but we will still used 10-fold cross-validation to select the bagged trees model. The point of 10-fold cross-validation is to split the original training set into subsets to train the model on and test the model on. In 10-fold cross-validation, 1 subset would be used for testing, and 9 would be used for training. All of the results are then averaged in creating the final model. 
 ```{r bagged_tree}
 #Create Model
 bagged_tree <- train(shares_1400 ~ ., data = daily_train, method = "treebag",
-                     trControl = trainControl(method = "cv"), tuneLength = 10)
+                     trControl = trainControl(method = "cv", number = 10))
 
 #View Model
 bagged_tree
 ```
 
 # Modeling Results
+In this section of the report, we will look at the results of our models and compare their accuracy on our test set of data.
 
-## Linear Model
-
+## Logistic Regression Model
+We will use the `predict()` function with our logistic model to predict whether or not an article will get more than 1,400 shares. The output will be rounded in order to convert to either a 0 (less than 1,400 shares) or 1 (more than 1,400 shares). The `confusionMatrix` function will be used to compare the prediction values to the actual values from the test set.
 ```{r linear_predict}
-glm_pred1 <- predict(glm_fit1, newdata = daily_test)
+glm_pred <- predict(best_model, newdata = daily_test)
 
 #Round Output
-glm_pred1 <- round(glm_pred1, 0)
+glm_pred <- round(glm_pred, 0)
 
 #Make Data Frame
-glm_pred1 <- data.frame(glm_pred1)
-names(glm_pred1) <- "shares_1400"
+glm_pred <- data.frame(glm_pred)
+names(glm_pred) <- "shares_1400"
 
 #Adjust for Bounds
-glm_pred1[,1][glm_pred1[,1] < 0] <- 0
-glm_pred1[,1][glm_pred1[,1] > 1] <- 1
+glm_pred[,1][glm_pred[,1] < 0] <- 0
+glm_pred[,1][glm_pred[,1] > 1] <- 1
 
 #Create Levels
-levels(glm_pred1$shares_1400) <- c("0", "1")
+levels(glm_pred$shares_1400) <- c("0", "1")
 
 #Make Factor
-glm_pred1$shares_1400 <- as.factor(glm_pred1$shares_1400)
+glm_pred$shares_1400 <- as.factor(glm_pred$shares_1400)
 
 #Create Confusion Matrix
-matrix1 <- confusionMatrix(glm_pred1$shares_1400, daily_test$shares_1400)
-matrix1
+logistic_results <- confusionMatrix(glm_pred$shares_1400, daily_test$shares_1400)
+logistic_results
 ```
 
-## Non-Linear Model
+### Logistic Regression Model Results
+The logistic regression model has an accuracy of `r logistic_results[["overall"]][["Accuracy"]]`.
 
+## Bagged Trees Model
+We will use the `predict()` function with our bagged trees model to predict whether or not an article will get more than 1,400 shares. The `confusionMatrix` function will be used to compare the prediction values to the actual values from the test set.
 ```{r predict_bagged}
 #Predict Bagged Tree
 bagged_pred <- predict(bagged_tree, daily_test)
@@ -249,5 +310,16 @@ bagged_results <- confusionMatrix(data = bagged_pred, reference = daily_test$sha
 bagged_results
 ```
 
-# Conclusion
+### Bagged Trees Model Results
+The logistic regression model has an accuracy of `r bagged_results[["overall"]][["Accuracy"]]`.
 
+# Conclusion
+```{r best_model}
+better <- ifelse(bagged_results[["overall"]][["Accuracy"]] > logistic_results[["overall"]][["Accuracy"]],
+                 "Bagged Trees Model", "Logistic Regression Model")
+
+better_accuracy <- ifelse(better == "Bagged Trees Model", bagged_results[["overall"]][["Accuracy"]], 
+       logistic_results[["overall"]][["Accuracy"]])
+```
+
+With an accuracy of `r better_accuracy`, we conclude that the `r better` is better at predicting whether or not a Mashable article will get more or less than 1,400 shares.
