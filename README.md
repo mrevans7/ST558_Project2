@@ -30,24 +30,24 @@ lapply(days, render_function)
 # Analysis for Each Day of the Week
 
 The analysis for [Monday is available here](Monday-Report.md).  
-\- Best Model: Bagged Trees
+**Best Model:** Bagged Trees
 
 The analysis for [Tuesday is available here](Tuesday-Report.md).  
-\- Best Model: Logistic Regression
+**Best Model:** Logistic Regression
 
 The analysis for [Wednesday is available here](Wednesday-Report.md).  
-\- Best Model: Logistic Regression
+**Best Model:** Logistic Regression
 
 The analysis for [Thursday is available here](Thursday-Report.md).  
-\- Best Model: Bagged Trees
+**Best Model:** Bagged Trees
 
 The analysis for [Friday is available here](Friday-Report.md).  
-\- Best Model: Bagged Trees
+**Best Model:** Bagged Trees
 
 The analysis for [Saturday is available here](Saturday-Report.md).  
-\- Best Model: Bagged Trees
+**Best Model:** Bagged Trees
 
 The analysis for [Sunday is available here](Sunday-Report.md).  
-\- Best Model: Bagged Trees
+**Best Model:** Bagged Trees
 
 The .Rmd file that was [automated is available here.](Project_Work.Rmd).
