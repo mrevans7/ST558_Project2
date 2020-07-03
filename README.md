@@ -42,3 +42,5 @@ The analysis for [Friday is available here](Friday-Report.md).
 The analysis for [Saturday is available here](Saturday-Report.md).
 
 The analysis for [Sunday is available here](Sunday-Report.md).
+
+The .Rmd file that was [automated is available here.](Project_Work.Rmd).
