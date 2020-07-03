@@ -20,18 +20,37 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
-You should have an introduction section that describes the data, the purpose of your analysis, and the methods you’ll use (roughly - more detail can be given later in the document).
+In this report, we will be analyzing an online news data set for `r params$weekday`. The goal of this report is to predict the number of `shares` an article will receive based on other characteristics of the article. 
 
 ## Description of Data
-You should briefly describe the data and the variables you have to work with (no need to discuss all of them, just the ones you want to use).
+The data comes from the UCI Machine Learning Repository and gives information about the features of articles published by Mashable. We will be analyzing the following variables in this report:  
+
+1. `n_tokens_title`: a numeric variable indicating the number of words in the title.  
+2. `n_tokens_content`: a numeric variable indicating the number of words in the body of the article.  
+3. `num_hrefs`: a numeric variable indicating the number of links used in the article.  
+4. `num_self_hrefs`: a numeric variable indicating the numbers of links to other Mashable articles.  
+5. `num_imgs`: a numeric variable indicating the number of images used in the article.  
+6. `num_videos`: a numeric variable indicating the number of videos used in the article.  
+7. `channel`: a factor variable indicating the data channel. This variable is derived from the `data_channel_is_*` variables in the original data set. It has seven levels: lifestyle, entertainment, business, socmed, tech, world, and none.  
+8. `shares_1400`: a factor variables indicating whether or not an article received more than 1,400 shares. This variable is derived from the `shares` variable in the original data set. 
 
 ## Purpose of Analysis
+The purpose of this analysis is to predict the variable `shares_1400` based on the other seven variables given. As previously mentioned, `shares_1400` is a variable that indicates whether or not an article received more than 1,400 shares.
+
+The shares an article receives is usually indicative of how popular an article is. Mashable, being a content producer, obviously wants to produce popular content. Thus, it is important for them to be able to identify what impacts how popular an article will be for them.
 
 ## Methods
+This analysis will highlight two methods of modeling: an ensemble model and a linear regression model. The ensemble model used in this analysis will be a bagged trees model. The linear regression model used in this analysis will be a logistic regression model.
+
+As the name suggests, the bagged trees method is a tree based method, meaning it uses regression/classification trees. In our case, it will be utilizing a classification tree since `shares_1400` is a class variable. The bagged method averages amongst multiple trees in order to decrease variance compared to using one tree. This method also utilizes bootstrapping aggregation to resample from the data multiple times and apply some methodology to that sample. 
+
+The logistic regression model will be used to model our response `shares_1400` as a success (more than 1,400 shares) or failure (less than 1,400 shares). The logistic regression model returns the probability of of success for a given observation. A value of 1 would indicate the model is certain that an article will get more than 1,400 shares, and a value of 0 would indicate the model is certain that an article will get less than 1,400 shares. 
 
 # Reading Data
+The analysis will begin by reading in the data about Mashable's articles. We will start by reading in the entire data set, then doing some data manipulating, subsetting, and filtering, and then splitting the data into a training and testing set.
 
 ## Initial Read
+We'll read the initial data set in with `read_csv()`. Then, we will use a combination of `mutate()` and `case_when()` from `dplyr` to create a variable called `Weekday` that tells which day of the week it is. Then, using our parameter `weekday` we will filter for the given weekday to return only observations regarding that weekday.
 ```{r reading_data, message = F}
 #Read Data
 news <- read_csv("OnlineNewsPopularity.csv")
@@ -52,7 +71,7 @@ daily_news <- news %>% filter(Weekday == params$weekday) %>%
 ```
 
 ## Creating New Variables
-
+Next, we will create the `shares_1400` variable that indicates whether or not an article received more than 1,400 shares. We will also create a variable called `channel` that indicates the data channel for a given observation. This will be created using `mutate()` and `case_when()` in combination with the `data_channel_is_*` variables.
 ```{r new_variables}
 #Make Shares into Factor
 daily_news$shares_1400 <- ifelse(daily_news$shares > 1400, 1, 0)
@@ -69,20 +88,20 @@ daily_news <- daily_news %>%
 
 #Replace NA Values with "None"
 daily_news$channel <- daily_news$channel %>% replace_na("None")
-```
-
-## Select Variables
-
-```{r get_variables}
-#Select Variables
-daily_news <-daily_news %>% select(n_tokens_title, n_tokens_content, num_hrefs:num_videos, shares_1400, channel)
 
 #Make Factor
 daily_news$channel <- as.factor(daily_news$channel)
 ```
 
-## Split into Train/Test Data
+## Select Variables
+Next, we will use the `select()` function to select the 8 variables of interest for this analysis.
+```{r get_variables}
+#Select Variables
+daily_news <-daily_news %>% select(n_tokens_title, n_tokens_content, num_hrefs:num_videos, shares_1400, channel)
+```
 
+## Split into Train/Test Data
+Finally, we will use the `sample()` function to split the initial data into a traning a testing set. The training set will include 70% of the initial data, while the testing set will include the other 30%. We'll also use the `set.seed()` function to make the results of this report reproducible.
 ```{r train_test}
 #Split into Training and Testing Set
 set.seed(321)
@@ -95,7 +114,73 @@ daily_test <- daily_news[test, ]
 ```
 
 # Summarizations
-You should produce some basic (but meaningful) summary statistics about the training data you are working with. The general things that the plots describe should be explained but, since we are going to automate things, there is no need to try and explain particular trends in the plots you see (unless you want to try and automate that too!).
+In this section of the report, we will look at some summary statistics for our variables, as well as some basic plots. 
+
+## Summary Statistics
+
+### Contingency Table
+In our first summary, we will generate a contingency table to show the number of articles that get more or less than 1,400 shares based on the data channel the article falls under.
+```{r contingency_1}
+#Create Contingency Table
+table.1 <- table(daily_train$shares_1400, daily_train$channel)
+
+#Rename Rows
+rownames(table.1) <- c("More Than 1,400 Shares", "Less Than 1,400 Shares")
+
+#Create Kable
+kable(table.1, caption = "Shares vs. Data Channel")
+```
+
+### Numerical Summary
+Next, we will use the `summary()` function to get summary information for each of our numerical variables. Summary information will include the minimum, first quartile, median, mean, third quartile, and maximum observations within each variable. 
+```{r five_number}
+summary <- daily_train %>% select(n_tokens_title:num_videos) %>% summary()
+kable(summary)
+```
+
+## Plots
+
+### Number of Words in Title and Content
+In this graph, we will look at the relationship between the number of words in the title and number of words in the content of an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles. An interesting finding would be whether or not more or less words lead to more popular articles.
+```{r plot1}
+#First Visual
+visuals.1 <- ggplot(data = daily_train, aes(x = n_tokens_content, y = n_tokens_title))
+visuals.1 + geom_point(aes(color = shares_1400)) +
+  geom_smooth() + 
+  labs(color = "More than 1,400 Shares?", title = "Number of Words in Title and Content",
+       x = "Number of Words in Content", y = "Number of Words in Title") 
+```
+
+### Number of Images and Videos
+In this graph, we will look at the relationship between the number of images and number of videos in an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles. An interesting finding would be whether or not more images/videos leads to more popular articles.
+```{r plot2}
+#Second Visual
+visuals.2 <- ggplot(data = daily_train, aes(x = num_imgs, y = num_videos))
+visuals.2 + geom_point(aes(color = shares_1400)) +
+  geom_smooth() + 
+  labs(color = "More than 1,400 Shares?", title = "Number of Images and Videos",
+       x = "Number of Images", y = "Number of Videos") 
+```
+
+### Number of Links and Links to Other Mashable Articles
+In this graph, we will look at the relationship between the number of links in an article and the number of links to other Mashable articles. This will give insights as to whether or not Mashable is using most of its links to link to itself, which would be evident from a positive linear relationship. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles.
+```{r plot3}
+#Third Visual
+visuals.3 <- ggplot(data = daily_train, aes(x = num_hrefs, y = num_self_hrefs))
+visuals.3 + geom_point(aes(color = shares_1400)) +
+  geom_smooth() + 
+  labs(color = "More than 1,400 Shares?", title = "Number of Links and Links to Other Mashable Articles",
+       x = "Number of Links", y = "Number of Links to Other Mashable Articles") 
+```
+
+### Count of Data Channel 
+In this graph, we will look at the number of articles posted in each data channel. Within each data channel, we can see the proportion of articles receiving more than 1,400 shares. This will help us determine whether or not a channel performs better than others.
+```{r plot4}
+#Fourth Visual
+visuals.4 <- ggplot(data = daily_train, aes(x = channel))
+visuals.4 + geom_bar(aes(fill = shares_1400)) +
+  labs(title = "Density Bar Plot for Channel", x = "Channel", y = "Count", fill = "More than 1,400 Shares")
+```
 
 # Modeling
 
