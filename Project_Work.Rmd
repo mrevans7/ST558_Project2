@@ -3,12 +3,10 @@ title: "ST558 Project 2"
 author: Michael Evans
 date: 7/3/2020
 output:
-  #pdf_document 
   rmarkdown::github_document:
     toc: true
 params:
   weekday: weekday
-  #weekday: "Monday"
 ---
 
 ```{r setup, include=FALSE}
@@ -43,7 +41,7 @@ The shares an article receives is usually indicative of how popular an article i
 ## Methods
 This analysis will highlight two methods of modeling: an ensemble model and a linear regression model. The ensemble model used in this analysis will be a bagged trees model. The linear regression model used in this analysis will be a logistic regression model.
 
-As the name suggests, the bagged trees method is a tree based method, meaning it uses regression/classification trees. In our case, it will be utilizing a classification tree since `shares_1400` is a class variable. The bagged method averages amongst multiple trees in order to decrease variance compared to using one tree. This method also utilizes bootstrapping aggregation to resample from the data multiple times and apply some methodology to that sample. 
+As the name suggests, the bagged trees method is a tree based method, meaning it uses regression/classification trees. In our case, it will be utilizing a classification tree since `shares_1400` is a class variable. The bagged method averages among multiple trees in order to decrease variance compared to using one tree. This method also utilizes bootstrapping aggregation to resample from the data multiple times and apply some methodology to that sample. 
 
 The logistic regression model will be used to model our response `shares_1400` as a success (more than 1,400 shares) or failure (less than 1,400 shares). The logistic regression model returns the probability of of success for a given observation. A value of 1 would indicate the model is certain that an article will get more than 1,400 shares, and a value of 0 would indicate the model is certain that an article will get less than 1,400 shares. 
 
@@ -102,7 +100,7 @@ daily_news <-daily_news %>% select(n_tokens_title, n_tokens_content, num_hrefs:n
 ```
 
 ## Split into Train/Test Data
-Finally, we will use the `sample()` function to split the initial data into a traning a testing set. The training set will include 70% of the initial data, while the testing set will include the other 30%. We'll also use the `set.seed()` function to make the results of this report reproducible.
+Finally, we will use the `sample()` function to split the initial data into a training a testing set. The training set will include 70% of the initial data, while the testing set will include the other 30%. We'll also use the `set.seed()` function to make the results of this report reproducible.
 ```{r train_test}
 #Split into Training and Testing Set
 set.seed(321)
@@ -133,17 +131,17 @@ kable(table.1, caption = "Shares vs. Data Channel")
 ```
 
 ### Numerical Summary
-Next, we will use the `summary()` function to get summary information for each of our numerical variables. Summary information will include the minimum, first quartile, median, mean, third quartile, and maximum observations within each variable. 
+Next, we will use the `summary()` function to get summary information for each of our numerical variables. Summary information will include the minimum, first quantile, median, mean, third quantile, and maximum observations within each variable. 
 ```{r five_number}
 #Create Sumamry
 summary <- daily_train %>% select(n_tokens_title:num_videos) %>% summary()
-kable(summary, caption = "Summary for Numeric Variables")
+summary
 ```
 
 ## Plots
 
 ### Number of Words in Title and Content
-In this graph, we will look at the relationship between the number of words in the title and number of words in the content of an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles. An interesting finding would be whether or not more or less words lead to more popular articles.
+In this graph, we will look at the relationship between the number of words in the title and number of words in the content of an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist among popular articles. An interesting finding would be whether or not more or less words lead to more popular articles.
 ```{r plot1}
 #First Visual
 visuals.1 <- ggplot(data = daily_train, aes(x = n_tokens_content, y = n_tokens_title))
@@ -154,7 +152,7 @@ visuals.1 + geom_point(aes(color = shares_1400)) +
 ```
 
 ### Number of Images and Videos
-In this graph, we will look at the relationship between the number of images and number of videos in an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles. An interesting finding would be whether or not more images/videos leads to more popular articles.
+In this graph, we will look at the relationship between the number of images and number of videos in an article. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist among popular articles. An interesting finding would be whether or not more images/videos leads to more popular articles.
 ```{r plot2}
 #Second Visual
 visuals.2 <- ggplot(data = daily_train, aes(x = num_imgs, y = num_videos))
@@ -165,7 +163,7 @@ visuals.2 + geom_point(aes(color = shares_1400)) +
 ```
 
 ### Number of Links and Links to Other Mashable Articles
-In this graph, we will look at the relationship between the number of links in an article and the number of links to other Mashable articles. This will give insights as to whether or not Mashable is using most of its links to link to itself, which would be evident from a positive linear relationship. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist amongst popular articles.
+In this graph, we will look at the relationship between the number of links in an article and the number of links to other Mashable articles. This will give insights as to whether or not Mashable is using most of its links to link to itself, which would be evident from a positive linear relationship. By coloring by whether or not an article has more than 1,400 shares, we will also be able to see any trends that exist among popular articles.
 ```{r plot3}
 #Third Visual
 visuals.3 <- ggplot(data = daily_train, aes(x = num_hrefs, y = num_self_hrefs))
@@ -193,11 +191,11 @@ In this section of the report, we will create our logistic regression model and 
 Logistic regression models will be created using the `glm()` function. In comparing logistic regression model, the AIC will be compared. The smaller the AIC, the better. It accounts for how well the model fits the data but also penalizes for overly complex models. We will choose the model with the smallest AIC. 
 
 For this analysis, we will investigate five different logistic models, summarized below:  
-1. Using all 7 predictor variables to predict `shares_1400`.
-2. Using variables relating to number of words to predict `shares_1400` (`n_tokens_title`, `n_tokens_content`).
-3. Using variables relating to links to predict `shares_1400` (`num_hrefs`, `num_self_hrefs`).
-4. Using variables relating to media to predict `shares_1400` (`num_imgs`, `num_videos`).
-5. Using variables relating to data channel to predict `shares_1400` (`channel`).
+1. Using all 7 predictor variables to predict `shares_1400`.  
+2. Using variables relating to number of words to predict `shares_1400` (`n_tokens_title`, `n_tokens_content`).  
+3. Using variables relating to links to predict `shares_1400` (`num_hrefs`, `num_self_hrefs`).  
+4. Using variables relating to media to predict `shares_1400` (`num_imgs`, `num_videos`).  
+5. Using variables relating to data channel to predict `shares_1400` (`channel`).  
 
 We will use the function `which.min()` to determine the model with the smallest AIC. Then, we will use an if else chain to save the object `best_model` as the model with the lowest AIC. 
 ```{r linear_model}
@@ -311,7 +309,7 @@ bagged_results
 ```
 
 ### Bagged Trees Model Results
-The logistic regression model has an accuracy of `r bagged_results[["overall"]][["Accuracy"]]`.
+The bagged trees model has an accuracy of `r bagged_results[["overall"]][["Accuracy"]]`.
 
 # Conclusion
 ```{r best_model}
@@ -323,3 +321,7 @@ better_accuracy <- ifelse(better == "Bagged Trees Model", bagged_results[["overa
 ```
 
 With an accuracy of `r better_accuracy`, we conclude that the `r better` is better at predicting whether or not a Mashable article will get more or less than 1,400 shares.
+
+However, as a whole, we note that both models are not particularly great at predicting whether or not an article will get more than 1,400 shares. This could be because the variables that were selected for exploration in this project are not the most important variables in making this prediction. Without doing a more extensive analysis, it is hard to say.
+
+This analysis is still important for showing the different ways that models can be created. If one were looking to get more complex, further methods for choosing variables for analysis and the regression model could be investigated. One could also look at building a model based on random forests or boosted trees to compare the results of those methods.

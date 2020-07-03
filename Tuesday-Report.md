@@ -88,7 +88,7 @@ analysis will be a logistic regression model.
 As the name suggests, the bagged trees method is a tree based method,
 meaning it uses regression/classification trees. In our case, it will be
 utilizing a classification tree since `shares_1400` is a class variable.
-The bagged method averages amongst multiple trees in order to decrease
+The bagged method averages among multiple trees in order to decrease
 variance compared to using one tree. This method also utilizes
 bootstrapping aggregation to resample from the data multiple times and
 apply some methodology to that sample.
@@ -177,7 +177,7 @@ daily_news <-daily_news %>% select(n_tokens_title, n_tokens_content, num_hrefs:n
 ## Split into Train/Test Data
 
 Finally, we will use the `sample()` function to split the initial data
-into a traning a testing set. The training set will include 70% of the
+into a training a testing set. The training set will include 70% of the
 initial data, while the testing set will include the other 30%. We’ll
 also use the `set.seed()` function to make the results of this report
 reproducible.
@@ -228,25 +228,22 @@ Shares vs. Data Channel
 
 Next, we will use the `summary()` function to get summary information
 for each of our numerical variables. Summary information will include
-the minimum, first quartile, median, mean, third quartile, and maximum
+the minimum, first quantile, median, mean, third quantile, and maximum
 observations within each variable.
 
 ``` r
 #Create Sumamry
 summary <- daily_train %>% select(n_tokens_title:num_videos) %>% summary()
-kable(summary, caption = "Summary for Numeric Variables")
+summary
 ```
 
-|  | n\_tokens\_title | n\_tokens\_content |   num\_hrefs   | num\_self\_hrefs |   num\_imgs    |  num\_videos  |
-|  | :--------------- | :----------------- | :------------: | :--------------- | :------------: | :-----------: |
-|  | Min. : 4.00      | Min. : 0.0         |  Min. : 0.00   | Min. : 0.00      |  Min. : 0.000  |  Min. : 0.00  |
-|  | 1st Qu.: 9.00    | 1st Qu.: 250.0     | 1st Qu.: 4.00  | 1st Qu.: 1.00    | 1st Qu.: 1.000 | 1st Qu.: 0.00 |
-|  | Median :10.00    | Median : 394.0     | Median : 7.00  | Median : 3.00    | Median : 1.000 | Median : 0.00 |
-|  | Mean :10.43      | Mean : 545.2       |  Mean : 10.56  | Mean : 3.27      |  Mean : 4.443  |  Mean : 1.28  |
-|  | 3rd Qu.:12.00    | 3rd Qu.: 695.0     | 3rd Qu.: 13.00 | 3rd Qu.: 4.00    | 3rd Qu.: 4.000 | 3rd Qu.: 1.00 |
-|  | Max. :19.00      | Max. :7081.0       |  Max. :187.00  | Max. :41.00      | Max. :100.000  |  Max. :59.00  |
-
-Summary for Numeric Variables
+    ##  n_tokens_title  n_tokens_content   num_hrefs      num_self_hrefs     num_imgs         num_videos   
+    ##  Min.   : 4.00   Min.   :   0.0   Min.   :  0.00   Min.   : 0.00   Min.   :  0.000   Min.   : 0.00  
+    ##  1st Qu.: 9.00   1st Qu.: 250.0   1st Qu.:  4.00   1st Qu.: 1.00   1st Qu.:  1.000   1st Qu.: 0.00  
+    ##  Median :10.00   Median : 394.0   Median :  7.00   Median : 3.00   Median :  1.000   Median : 0.00  
+    ##  Mean   :10.43   Mean   : 545.2   Mean   : 10.56   Mean   : 3.27   Mean   :  4.443   Mean   : 1.28  
+    ##  3rd Qu.:12.00   3rd Qu.: 695.0   3rd Qu.: 13.00   3rd Qu.: 4.00   3rd Qu.:  4.000   3rd Qu.: 1.00  
+    ##  Max.   :19.00   Max.   :7081.0   Max.   :187.00   Max.   :41.00   Max.   :100.000   Max.   :59.00
 
 ## Plots
 
@@ -255,7 +252,7 @@ Summary for Numeric Variables
 In this graph, we will look at the relationship between the number of
 words in the title and number of words in the content of an article. By
 coloring by whether or not an article has more than 1,400 shares, we
-will also be able to see any trends that exist amongst popular articles.
+will also be able to see any trends that exist among popular articles.
 An interesting finding would be whether or not more or less words lead
 to more popular articles.
 
@@ -277,7 +274,7 @@ visuals.1 + geom_point(aes(color = shares_1400)) +
 In this graph, we will look at the relationship between the number of
 images and number of videos in an article. By coloring by whether or not
 an article has more than 1,400 shares, we will also be able to see any
-trends that exist amongst popular articles. An interesting finding would
+trends that exist among popular articles. An interesting finding would
 be whether or not more images/videos leads to more popular articles.
 
 ``` r
@@ -301,7 +298,7 @@ This will give insights as to whether or not Mashable is using most of
 its links to link to itself, which would be evident from a positive
 linear relationship. By coloring by whether or not an article has more
 than 1,400 shares, we will also be able to see any trends that exist
-amongst popular articles.
+among popular articles.
 
 ``` r
 #Third Visual
@@ -349,13 +346,15 @@ model with the smallest AIC.
 
 For this analysis, we will investigate five different logistic models,
 summarized below:  
-1\. Using all 7 predictor variables to predict `shares_1400`. 2. Using
-variables relating to number of words to predict `shares_1400`
-(`n_tokens_title`, `n_tokens_content`). 3. Using variables relating to
-links to predict `shares_1400` (`num_hrefs`, `num_self_hrefs`). 4. Using
-variables relating to media to predict `shares_1400` (`num_imgs`,
-`num_videos`). 5. Using variables relating to data channel to predict
-`shares_1400` (`channel`).
+1\. Using all 7 predictor variables to predict `shares_1400`.  
+2\. Using variables relating to number of words to predict `shares_1400`
+(`n_tokens_title`, `n_tokens_content`).  
+3\. Using variables relating to links to predict `shares_1400`
+(`num_hrefs`, `num_self_hrefs`).  
+4\. Using variables relating to media to predict `shares_1400`
+(`num_imgs`, `num_videos`).  
+5\. Using variables relating to data channel to predict `shares_1400`
+(`channel`).
 
 We will use the function `which.min()` to determine the model with the
 smallest AIC. Then, we will use an if else chain to save the object
@@ -602,7 +601,7 @@ bagged_results
 
 ### Bagged Trees Model Results
 
-The logistic regression model has an accuracy of 0.5764547.
+The bagged trees model has an accuracy of 0.5764547.
 
 # Conclusion
 
@@ -617,3 +616,15 @@ better_accuracy <- ifelse(better == "Bagged Trees Model", bagged_results[["overa
 With an accuracy of 0.5823184, we conclude that the Logistic Regression
 Model is better at predicting whether or not a Mashable article will get
 more or less than 1,400 shares.
+
+However, as a whole, we note that both models are not particularly great
+at predicting whether or not an article will get more than 1,400 shares.
+This could be because the variables that were selected for exploration
+in this project are not the most important variables in making this
+prediction. Without doing a more extensive analysis, it is hard to say.
+
+This analysis is still important for showing the different ways that
+models can be created. If one were looking to get more complex, further
+methods for choosing variables for analysis and the regression model
+could be investigated. One could also look at building a model based on
+random forests or boosted trees to compare the results of those methods.
